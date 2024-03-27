@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Collaborative Shopping List</title>
+  <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+<body>
+    <div id="login-container">
+      <!-- Login form goes here -->
+      <button onclick="googleSignIn()">Sign in with Google</button>
+    </div>
+  
+    <div id="user-info" style="display: none;">
+      <!-- User information goes here -->
+      <button onclick="signOut()">Sign Out</button>
+    </div>
+  
+    <!-- Your script here -->
+  
+  <script src="https://www.gstatic.com/firebasejs/8.2.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.2.1/firebase-database.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.2.1/firebase-auth.js"></script>
+  <script>
+    // Firebase configuration
+    var firebaseConfig = {
+      apiKey: "AIzaSyCVLYe0Wo9D1XRI0EI60dsDS5YShz05SQk",
+      authDomain: "products-a914a.firebaseapp.com",
+      projectId: "products-a914a",
+      storageBucket: "products-a914a.appspot.com",
+      messagingSenderId: "654642441124",
+      appId: "1:654642441124:web:38ef307f380e2f2f4b195d"
+    };
+  
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+  
+    // Google Sign-In function
+    function googleSignIn() {
+      var provider = new firebase.auth.GoogleAuthProvider();
+      firebase.auth().signInWithPopup(provider)
+        .then((result) => {
+          var user = result.user;
+          document.getElementById('login-container').style.display = 'none';
+          document.getElementById('user-info').style.display = 'block';
+        })
+        .catch((error) => {
+          console.error("Error signing in with Google: ", error);
+        });
+    }
+  
+    // Sign out function
+    function signOut() {
+      firebase.auth().signOut()
+        .catch((error) => {
+          console.error("Error signing out: ", error);
+        });
+    }
+  
+    // Handle user state changes
+    window.onload = function() {
+      firebase.auth().onAuthStateChanged((user) => {
+        if (user) {
+          // User is signed in, hide the login container and show the user info
+          document.getElementById('login-container').style.display = 'none';
+          document.getElementById('user-info').style.display = 'block';
+        } else {
+          // No user is signed in, show the login container and hide the user info
+          document.getElementById('login-container').style.display = 'block';
+          document.getElementById('user-info').style.display = 'none';
+        }
+      });
+    }
+  </script>
+</body>
+</html>

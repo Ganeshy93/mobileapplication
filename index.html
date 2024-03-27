@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Collaborative Shopping List</title>
+  <link rel="stylesheet" type="text/css" href="css/index.css">
+</head>
+<body>
+  <video autoplay muted loop id="bg-video">
+    <source src="./video/video.mp4" type="video/mp4">
+    Your browser does not support HTML5 video.
+  </video>
+
+  <div class="glass-container">
+    <img src="img/logo1.png" alt="Logo" class="logo">
+    <h1>Collaborative Shopping List</h1>
+    <div class="input-group">
+      <input id="productInput" type="text" placeholder="Enter a product">
+      <input id="quantityInput" type="number" placeholder="Enter quantity">
+      <input id="categoryInput" type="text" placeholder="Enter category">
+    </div>
+    <select id="categoryFilter" onchange="filterByCategory()">
+        <option value="">All Categories</option>
+        <option value="Fruits">Fruits</option>
+        <option value="Vegetables">Vegetables</option>
+        <option value="Dairy">Dairy</option>
+        <!-- Add more categories as needed -->
+    </select>
+    <button onclick="addProduct()">Add Product</button>
+    <ul id="productList"></ul>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/8.2.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.2.1/firebase-database.js"></script>
+  <script src="js/script.js"></script>
+
+<script>
+  
+    // Initialize Firebase
+    // Initialize Firebase
+var firebaseConfig = {
+  databaseURL: "https://products-a914a-default-rtdb.firebaseio.com/"
+};
+firebase.initializeApp(firebaseConfig);
+var database = firebase.database();
+
+// Add a global variable to store the current filter
+var currentFilter = '';
+
+// Listen for changes in the 'products' reference
+database.ref('products').on('value', (snapshot) => {
+  // Apply the filter to the new data
+  var products = snapshot.val();
+  var filteredProducts = {};
+  for (var productId in products) {
+    if (products[productId].category === currentFilter || currentFilter === '') {
+      filteredProducts[productId] = products[productId];
+    }
+  }
+  // Call the displayProductList function with the filtered data
+  displayProductList(filteredProducts);
+  updateCategoryFilterDropdown(products);
+});
+
+function updateCategoryFilterDropdown(products) {
+  var categories = {};
+  for (var productId in products) {
+    categories[products[productId].category] = true;
+  }
+
+  var categoryFilterDropdown = document.getElementById('categoryFilter');
+  categoryFilterDropdown.innerHTML = '<option value="">All Categories</option>';
+  for (var category in categories) {
+    categoryFilterDropdown.innerHTML += '<option value="' + category + '">' + category + '</option>';
+  }
+}
+
+function addProduct() {
+  var productInput = document.getElementById('productInput');
+  var quantityInput = document.getElementById('quantityInput');
+  var categoryInput = document.getElementById('categoryInput');
+  var newProductRef = database.ref('products').push();
+  newProductRef.set({
+    product: productInput.value,
+    quantity: quantityInput.value,
+    category: categoryInput.value,
+    purchased: false
+  });
+  productInput.value = '';
+  quantityInput.value = '';
+  categoryInput.value = '';
+}
+
+function filterByCategory() {
+  var categoryFilter = document.getElementById('categoryFilter').value;
+  currentFilter = categoryFilter;
+  database.ref('products').once('value', (snapshot) => {
+    var products = snapshot.val();
+    var filteredProducts = {};
+    for (var productId in products) {
+      if (products[productId].category === categoryFilter || categoryFilter === '') {
+        filteredProducts[productId] = products[productId];
+      }
+    }
+    displayProductList(filteredProducts);
+  });
+}
+
+function displayProductList(products) {
+  var productListHTML = '';
+  for (var productId in products) {
+    var statusText = products[productId].purchased ? ' (Purchased)' : '';
+    productListHTML += `
+      <li class="product">
+        <span>${products[productId].product} (Quantity: ${products[productId].quantity}, Category: ${products[productId].category})${statusText}</span>
+        <button onclick="deleteProduct('${productId}')">Delete</button>
+        <button onclick="editProduct('${productId}')">Edit</button>
+        <button onclick="markAsPurchased('${productId}')">Mark as Purchased</button>
+      </li>
+    `;
+  }
+  document.getElementById('productList').innerHTML = productListHTML;
+}
+
+function editProduct(productId) {
+  var newQuantity = prompt("Enter the new quantity");
+  if (newQuantity) {
+    database.ref('products/' + productId).update({quantity: newQuantity})
+    .then(() => {
+      console.log("Product updated successfully");
+    })
+    .catch((error) => {
+      console.error("Error updating product: ", error);
+    });
+  }
+}
+
+function deleteProduct(productId) {
+  database.ref('products/' + productId).remove()
+  .then(() => {
+    console.log("Product deleted successfully");
+  })
+  .catch((error) => {
+    console.error("Error deleting product: ", error);
+  });
+}
+
+function markAsPurchased(productId) {
+  database.ref('products/' + productId).update({purchased: true})
+  .then(() => {
+    console.log("Product marked as purchased successfully");
+  })
+  .catch((error) => {
+    console.error("Error updating product: ", error);
+  });
+}
+
+
+    
+  </script>
+</body>
+</html>
